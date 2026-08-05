@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Shift Yield Calculator</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 500px; margin: 20px auto; padding: 15px; color: #333; background-color: #f4f6f9; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { margin-top: 0; color: #111; font-size: 22px; }
+        label { display: block; font-weight: bold; margin-top: 15px; margin-bottom: 5px; font-size: 14px; }
+        textarea { width: 100%; height: 110px; padding: 10px; border: 2px solid #ced4da; border-radius: 6px; box-sizing: border-box; font-size: 13px; font-family: monospace; resize: vertical; }
+        textarea:focus { border-color: #007bff; outline: none; }
+        button { width: 100%; padding: 14px; margin-top: 20px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #output { padding: 20px; background: #e9ecef; border-left: 5px solid #28a745; border-radius: 4px; display: none; }
+        .metric { font-size: 32px; font-weight: bold; color: #28a745; margin: 10px 0; }
+        .error { color: #dc3545; font-weight: bold; }
+        .summary-text { font-size: 14px; color: #666; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Multi-Shift Yield Calculator</h2>
+        <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Paste the machine text for each shift below. If you only have one shift today, leave Shift 2 blank.</p>
+        
+        <label>Shift 1 Log Data:</label>
+        <textarea id="shift1Text" placeholder="Paste Shift 1 raw text here..."></textarea>
+        
+        <label>Shift 2 Log Data (Optional):</label>
+        <textarea id="shift2Text" placeholder="Paste Shift 2 raw text here..."></textarea>
+        
+        <button onclick="calculateCombinedYield()">Calculate Combined Yield</button>
+    </div>
+
+    <div id="output" class="card"></div>
+
+    <script>
+        function extractNumbers(text) {
+            if (!text.trim()) return { preforms: 0, bottles: 0 };
+            
+            const preformsRegex = /Total preforms used\s*[\r\n]+\s*(\d+)/i;
+            const bottlesRegex = /Total number of bottles\s*[\r\n]+\s*(\d+)/i;
+            
+            const preformsMatch = text.match(preformsRegex);
+            const bottlesMatch = text.match(bottlesRegex);
+            
+            return {
+                preforms: preformsMatch ? parseInt(preformsMatch[1], 10) : 0,
+                bottles: bottlesMatch ? parseInt(bottlesMatch[1], 10) : 0,
+                isValid: !!(preformsMatch && bottlesMatch)
+            };
+        }
+
+        function calculateCombinedYield() {
+            const text1 = document.getElementById('shift1Text').value;
+            const text2 = document.getElementById('shift2Text').value;
+            const outputDiv = document.getElementById('output');
+            
+            let totalPreforms = 0;
+            let totalBottles = 0;
+            
+            // Process Shift 1
+            if (text1.trim()) {
+                const data1 = extractNumbers(text1);
+                if (!data1.isValid) {
+                    showError("Could not read numbers from Shift 1. Please check the text format.");
+                    return;
+                }
+                totalPreforms += data1.preforms;
+                totalBottles += data1.bottles;
+            } else {
+                showError("Please paste at least Shift 1 data.");
+                return;
+            }
+            
+            // Process Shift 2 (Only if text exists)
+            if (text2.trim()) {
+                const data2 = extractNumbers(text2);
+                if (!data2.isValid) {
+                    showError("Could not read numbers from Shift 2. Please check the text format.");
+                    return;
+                }
+                totalPreforms += data2.preforms;
+                totalBottles += data2.bottles;
+            }
+            
+            // Final Yield Math
+            if (totalPreforms > 0) {
+                const yieldPercent = (totalBottles / totalPreforms) * 100;
+                const scrapPercent = 100 - yieldPercent;
+                const totalScrap = totalPreforms - totalBottles;
+                
+                outputDiv.style.display = 'block';
+                outputDiv.style.borderLeftColor = '#28a745';
+                outputDiv.innerHTML = `
+                    <div style="font-weight: bold; text-transform: uppercase; color: #555; font-size: 12px;">Benin Line 7 Preform Yield</div>
+                    <div class="metric">${yieldPercent.toFixed(2)}%</div>
+                    
+                    <div class="summary-text">
+                        <strong>Total Run Input:</strong> ${totalPreforms.toLocaleString()} preforms<br>
+                        <strong>Total Good Output:</strong> ${totalBottles.toLocaleString()} bottles<br>
+                        <strong>Total Process Waste:</strong> ${totalScrap.toLocaleString()} pieces (${scrapPercent.toFixed(2)}% scrap)
+                    </div>
+                `;
+            } else {
+                showError("Total preforms cannot be zero.");
+            }
+        }
+        
+        function showError(message) {
+            const outputDiv = document.getElementById('output');
+            outputDiv.style.display = 'block';
+            outputDiv.style.borderLeftColor = '#dc3545';
+            outputDiv.innerHTML = `<span class="error">❌ Error: ${message}</span>`;
+        }
+    </script>
+
+</body>
+</html>
