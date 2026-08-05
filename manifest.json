@@ -1,0 +1,16 @@
+{
+  "short_name": "Yield Calc",
+  "name": "Multi-Shift Yield Calculator",
+  "icons": [
+    {
+      "src": "https://flaticon.com",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "background_color": "#f4f6f9",
+  "theme_color": "#007bff",
+  "display": "standalone",
+  "orientation": "portrait"
+}
